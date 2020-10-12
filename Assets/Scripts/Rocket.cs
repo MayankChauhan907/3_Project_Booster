@@ -3,21 +3,26 @@ using UnityEngine.SceneManagement;
 
 public class Rocket : MonoBehaviour
 {
-    //Referancess
+#pragma warning disable 0649
+
     Rigidbody rigidBody;
     AudioSource audioSource;
-
-    //Member Variables
     [SerializeField] float _RotationThrustSpeed = 100f;
     [SerializeField] float _mainThrustSpeed = 100f;
+    [SerializeField] float _levelLoadDeley = 2f;
+    bool _isCollisonOn = false;
+
+
     [SerializeField] AudioClip _mainThrustSFX;
     [SerializeField] AudioClip _deathSFX;
     [SerializeField] AudioClip _winSFX;
 
 
-    //Configuration
-    enum State { Alive, Trascending, Dying }
-    State state = State.Alive;
+    [SerializeField] ParticleSystem _mainThrustParticles;
+    [SerializeField] ParticleSystem _deathParticles;
+    [SerializeField] ParticleSystem _winParticles;
+
+    bool _isTrasceding = false;
 
 
     // Start is called before the first frame update
@@ -30,18 +35,22 @@ public class Rocket : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(state == State.Alive)
+        if (!_isTrasceding)
         {
             RespondToThrustInput();
             RespondToRotationInput();
+        }
+        if (Debug.isDebugBuild)
+        {
+            RespondToDebugKeys();
         }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        if(state != State.Alive) { return; }
+        if (_isTrasceding || _isCollisonOn) { return; }
 
-        switch(collision.gameObject.tag)
+        switch (collision.gameObject.tag)
         {
             case "Friendly":
                 //Do Nothing
@@ -59,23 +68,31 @@ public class Rocket : MonoBehaviour
 
     private void StartSuccessSequence()
     {
-        state = State.Trascending;
+        _isTrasceding = true;
         audioSource.Stop();
         audioSource.PlayOneShot(_winSFX);
-        Invoke("LoadNextScene", 1f);
+        _winParticles.Play();
+        Invoke("LoadNextScene", _levelLoadDeley);
     }
 
     private void StartDeathSequence()
     {
-        state = State.Dying;
+        _isTrasceding = true;
         audioSource.Stop();
         audioSource.PlayOneShot(_deathSFX);
-        Invoke("LoadFirstScene", 1f);
+        _deathParticles.Play();
+        Invoke("LoadFirstScene", _levelLoadDeley);
     }
 
     private void LoadNextScene()
     {
-        SceneManager.LoadScene(1);
+        int currentIndex = SceneManager.GetActiveScene().buildIndex;
+        int nextIndex = currentIndex + 1;
+        if (nextIndex == SceneManager.sceneCountInBuildSettings)
+        {
+            nextIndex = 0;
+        }
+        SceneManager.LoadScene(nextIndex);
     }
 
     private void LoadFirstScene()
@@ -92,33 +109,46 @@ public class Rocket : MonoBehaviour
         else
         {
             audioSource.Stop();
+            _mainThrustParticles.Stop();
         }
     }
 
     private void ApplyThrust()
     {
-        rigidBody.AddRelativeForce(Vector3.up * _mainThrustSpeed);
+        rigidBody.AddRelativeForce(Vector3.up * _mainThrustSpeed * Time.deltaTime);
         if (!audioSource.isPlaying)
         {
             audioSource.PlayOneShot(_mainThrustSFX);
         }
+        if (_mainThrustParticles.isPlaying) { return; }
+        _mainThrustParticles.Play();
     }
 
     private void RespondToRotationInput()
     {
-        rigidBody.freezeRotation = true;
 
         float RotateThisFrame = _RotationThrustSpeed * Time.deltaTime;
-
         if (Input.GetKey(KeyCode.A))
         {
+            rigidBody.angularVelocity = Vector3.zero;
             transform.Rotate(Vector3.forward * RotateThisFrame);
         }
         else if (Input.GetKey(KeyCode.D))
         {
+            rigidBody.angularVelocity = Vector3.zero;
             transform.Rotate(-Vector3.forward * RotateThisFrame);
         }
+    }
 
-        rigidBody.freezeRotation = false;
+    private void RespondToDebugKeys()
+    {
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            LoadNextScene();
+        }
+        else if (Input.GetKeyDown(KeyCode.C))
+        {
+            _isCollisonOn = !_isCollisonOn;
+        }
     }
 }
