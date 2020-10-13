@@ -126,6 +126,7 @@ public class Rocket : MonoBehaviour
 
     private void RespondToRotationInput()
     {
+        //rigidBody.angularVelocity = Vector3.zero;
 
         float RotateThisFrame = _RotationThrustSpeed * Time.deltaTime;
         if (Input.GetKey(KeyCode.A))
