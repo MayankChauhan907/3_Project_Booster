@@ -7,7 +7,7 @@ public class Rocket : MonoBehaviour
 
     Rigidbody rigidBody;
     AudioSource audioSource;
-    [SerializeField] float _RotationThrustSpeed = 100f;
+    [SerializeField] float _rotationThrustSpeed = 100f;
     [SerializeField] float _mainThrustSpeed = 100f;
     [SerializeField] float _levelLoadDeley = 2f;
     bool _isCollisonOn = false;
@@ -128,7 +128,7 @@ public class Rocket : MonoBehaviour
     {
         //rigidBody.angularVelocity = Vector3.zero;
 
-        float RotateThisFrame = _RotationThrustSpeed * Time.deltaTime;
+        float RotateThisFrame = _rotationThrustSpeed * Time.deltaTime;
         if (Input.GetKey(KeyCode.A))
         {
             rigidBody.angularVelocity = Vector3.zero;
